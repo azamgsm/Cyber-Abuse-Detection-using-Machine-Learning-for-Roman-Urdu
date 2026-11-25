@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Roman Urdu Cyber Abuse Detector</title>
+  <style>
+    :root {
+      --bg1: #0f172a; --bg2: #1e1b4b; --card: #ffffff; --text: #0f172a; --muted: #64748b;
+      --primary: #6366f1; --primary-dark: #4f46e5; --border: #e2e8f0;
+      --bad: #dc2626; --bad-bg: #fef2f2; --good: #16a34a; --good-bg: #f0fdf4;
+      --warn: #b45309; --warn-bg: #fffbeb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+      font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+      background: linear-gradient(120deg, #ff6ec4, #7873f5, #4ade80, #22d3ee, #f59e0b, #ff6ec4);
+      background-size: 400% 400%; animation: flow 18s ease infinite;
+      color: var(--text); padding: 40px 16px; position: relative; overflow-x: hidden;
+    }
+    @keyframes flow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    .blob { position: fixed; border-radius: 50%; filter: blur(60px); opacity: .55; z-index: 0; animation: float 14s ease-in-out infinite; }
+    .b1 { width: 320px; height: 320px; background: #fde047; top: -80px; left: -80px; }
+    .b2 { width: 380px; height: 380px; background: #38bdf8; bottom: -120px; right: -100px; animation-delay: -5s; }
+    .b3 { width: 260px; height: 260px; background: #f472b6; top: 45%; left: 60%; animation-delay: -9s; }
+    @keyframes float { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(40px,-50px) scale(1.15); } }
+    .hero, .card, .steps, footer { position: relative; z-index: 1; }
+    .hero h1, .hero p, .badge { text-shadow: 0 2px 12px rgba(0,0,0,.25); }
+    .hero { text-align: center; color: #fff; max-width: 640px; margin-bottom: 28px; }
+    .badge {
+      display: inline-block; padding: 6px 14px; border-radius: 999px; font-size: 12px; letter-spacing: .08em;
+      background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); margin-bottom: 16px;
+    }
+    .hero h1 { font-size: clamp(26px, 5vw, 40px); line-height: 1.2; font-weight: 800; }
+    .hero h1 span { color: #fff59d; }
+    .hero p { margin-top: 12px; color: #ffffff; font-size: 15px; line-height: 1.6; }
+
+    .card {
+      width: 100%; max-width: 640px; background: var(--card); border-radius: 20px; padding: 28px;
+      box-shadow: 0 25px 60px rgba(0,0,0,.35);
+    }
+    label.title { display: block; font-weight: 700; font-size: 15px; margin-bottom: 10px; }
+    .field { position: relative; }
+    textarea {
+      width: 100%; height: 140px; resize: none; padding: 16px; font-size: 16px; font-family: inherit;
+      border: 2px solid var(--border); border-radius: 14px; outline: none; color: var(--text);
+      transition: border-color .2s, box-shadow .2s;
+    }
+    textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(99,102,241,.15); }
+    .counter { position: absolute; right: 14px; bottom: 10px; font-size: 12px; color: var(--muted); }
+
+    .examples { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .examples small { color: var(--muted); font-size: 12px; margin-right: 4px; }
+    .chip {
+      border: 1px solid var(--border); background: #f8fafc; color: #334155; font-size: 13px; padding: 6px 12px;
+      border-radius: 999px; cursor: pointer; font-family: inherit; transition: all .15s;
+    }
+    .chip:hover { background: #eef2ff; border-color: var(--primary); color: var(--primary-dark); }
+
+    .actions { display: flex; gap: 10px; margin-top: 20px; }
+    button.main {
+      flex: 1; padding: 14px; font-size: 16px; font-weight: 700; color: #fff; border: none; border-radius: 12px; cursor: pointer;
+      background: linear-gradient(135deg, var(--primary), #8b5cf6); font-family: inherit;
+      transition: transform .12s, box-shadow .2s; box-shadow: 0 8px 20px rgba(99,102,241,.35);
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    button.main:hover { transform: translateY(-1px); box-shadow: 0 12px 26px rgba(99,102,241,.45); }
+    button.main:disabled { opacity: .85; cursor: wait; transform: none; }
+    button.ghost {
+      padding: 14px 20px; font-size: 15px; font-weight: 600; background: #f1f5f9; color: #475569;
+      border: none; border-radius: 12px; cursor: pointer; font-family: inherit;
+    }
+    button.ghost:hover { background: #e2e8f0; }
+    .spinner {
+      width: 18px; height: 18px; border: 3px solid rgba(255,255,255,.4); border-top-color: #fff;
+      border-radius: 50%; animation: spin .7s linear infinite; display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .result {
+      margin-top: 24px; padding: 20px; border-radius: 16px; display: flex; align-items: center; gap: 16px;
+      animation: pop .4s ease; border: 2px solid transparent;
+    }
+    @keyframes pop { from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: none; } }
+    .result .icon { font-size: 36px; width: 60px; height: 60px; display: grid; place-items: center; border-radius: 50%; background: #fff; flex-shrink: 0; }
+    .result .label { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; opacity: .75; }
+    .result .verdict { font-size: 22px; font-weight: 800; margin-top: 2px; }
+    .result .note { font-size: 13px; margin-top: 4px; opacity: .85; }
+    .result.A  { background: var(--bad-bg);  color: var(--bad);  border-color: #fecaca; }
+    .result.NA { background: var(--good-bg); color: var(--good); border-color: #bbf7d0; }
+    .result.other { background: var(--warn-bg); color: var(--warn); border-color: #fde68a; }
+
+    .steps { width: 100%; max-width: 640px; margin-top: 24px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .step { background: rgba(255,255,255,.25); border: 1px solid rgba(255,255,255,.45); backdrop-filter: blur(6px); border-radius: 14px; padding: 14px; color: #fff; font-weight: 600; text-align: center; font-size: 13px; }
+    .step b { display: block; font-size: 22px; margin-bottom: 4px; }
+    footer { margin-top: 24px; color: #ffffff; text-shadow: 0 1px 8px rgba(0,0,0,.3); font-size: 12px; text-align: center; }
+    @media (max-width: 520px) { .steps { grid-template-columns: 1fr; } .card { padding: 20px; } }
+    .compare { margin-top: 24px; }
+    .compare h2 { font-size: 18px; }
+    .compare p { font-size: 13px; color: var(--muted); margin: 4px 0 12px; }
+    .scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { padding: 8px 5px; border-bottom: 1px solid var(--border); text-align: center; }
+    td:first-child, th:first-child { text-align: left; }
+  </style>
+</head>
+<body>
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+
+  <header class="hero">
+    <div class="badge">NLP &bull; MACHINE LEARNING &bull; ROMAN URDU</div>
+    <h1>Cyber Abuse <span>Detection System</span></h1>
+    <p>Roman Urdu comment likhein aur AI real-time mein bataye ga ke woh Abusive hai ya Non-Abusive.</p>
+  </header>
+
+  <main class="card">
+    <form method="POST" id="form">
+      <label class="title" for="comment">Apna comment likhein</label>
+      <div class="field">
+        <textarea id="comment" name="comment" maxlength="500"
+                  placeholder="Example: Aap ka kaam bohot acha hai...">{{ comment }}</textarea>
+        <span class="counter"><span id="count">0</span>/500</span>
+      </div>
+
+      <div class="examples">
+        <small>Try karein:</small>
+        <button type="button" class="chip" data-text="Aap ki mehnat qabil-e-tareef hai">Achha comment</button>
+        <button type="button" class="chip" data-text="Tu bohot bekar aadmi hai">Bura comment</button>
+        <button type="button" class="chip" data-text="Yeh jagah bohot khubsurat hai">Tareef</button>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="main" id="btn">
+          <span class="spinner" id="spin"></span><span id="btnText">Check Comment</span>
+        </button>
+        <button type="button" class="ghost" id="clear">Clear</button>
+      </div>
+    </form>
+
+    {% if error %}
+      <div class="result other">
+        <div class="icon">&#9888;&#65039;</div>
+        <div><div class="label">Notice</div><div class="verdict" style="font-size:17px;">{{ error }}</div></div>
+      </div>
+    {% endif %}
+    {% if note %}
+      <div class="result other"><div class="note">{{ note }}</div></div>
+    {% endif %}
+    {% for r in results %}
+      <div class="result {{ 'A' if r.abusive else 'NA' }}">
+        <div class="icon">{% if r.abusive %}&#128683;{% else %}&#9989;{% endif %}</div>
+        <div>
+          <div class="label">{{ r.name }}</div>
+          <div class="verdict">{{ 'Abusive (A)' if r.abusive else 'Non-Abusive (NA)' }}</div>
+        </div>
+      </div>
+    {% endfor %}
+  </main>
+
+  <section class="steps">
+    <div class="step"><b>1</b>Comment likhein</div>
+    <div class="step"><b>2</b>Text clean + TF-IDF</div>
+    <div class="step"><b>3</b>ML model prediction</div>
+  </section>
+
+  <section class="card compare">
+    <h2>Model Comparison</h2>
+    <p>Test data: {{ test_size }} comments (25%)</p>
+    <div class="scroll">
+      <table>
+        <tr><th>Model</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1</th><th>TP</th><th>TN</th><th>FP</th><th>FN</th></tr>
+        {% for name, m in metrics.items() %}
+          {% set c = matrices[name] %}
+          <tr>
+            <td>{{ name }}</td>
+            {% for key in ['Accuracy', 'Precision', 'Recall', 'F1-score'] %}<td>{{ '%.1f' % (m[key] * 100) }}%</td>{% endfor %}
+            <td>{{ c[1][1] }}</td><td>{{ c[0][0] }}</td><td>{{ c[0][1] }}</td><td>{{ c[1][0] }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+  </section>
+
+  <footer>Cyber Abuse Detection using Machine Learning for Roman Urdu</footer>
+
+  <script>
+    const box = document.getElementById("comment");
+    const count = document.getElementById("count");
+    const update = () => { count.textContent = box.value.length; };
+    box.addEventListener("input", update); update();
+
+    // Example buttons comment box mein text bhar dete hain
+    document.querySelectorAll(".chip").forEach(c =>
+      c.addEventListener("click", () => { box.value = c.dataset.text; update(); box.focus(); }));
+
+    // Clear button
+    document.getElementById("clear").addEventListener("click", () => {
+      box.value = ""; update(); box.focus();
+      document.querySelectorAll(".result").forEach(r => r.remove());
+    });
+
+    // Submit par loading spinner
+    document.getElementById("form").addEventListener("submit", () => {
+      document.getElementById("spin").style.display = "block";
+      document.getElementById("btnText").textContent = "Checking...";
+      document.getElementById("btn").disabled = true;
+    });
+  </script>
+</body>
+</html>
